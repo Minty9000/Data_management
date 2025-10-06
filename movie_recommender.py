@@ -140,7 +140,7 @@ def load_ratings():
     # --- OPTION 1: Load from file ---
     if choice == "f":
         while True:
-            file_path = input("Enter path to ratings dataset (without extension if .txt): ").strip()
+            file_path = input("Enter path to ratings dataset: ").strip()
             # Automatically add .txt if missing
             if not os.path.splitext(file_path)[1]:
                 file_path += ".txt"
@@ -175,7 +175,7 @@ def load_ratings():
 
         # Save file safely
         while True:
-            file_path = input("Enter filename to save (without extension if .txt): ").strip()
+            file_path = input("Enter filename to save: ").strip()
             if not os.path.splitext(file_path)[1]:
                 file_path += ".txt"
 
