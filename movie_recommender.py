@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 
 # Read the data from the text file into a DataFrame
 movies_df = None
@@ -61,26 +62,145 @@ def main_menu():
             print("Invalid choice, please try again.")
 
 
-# Function to load and display movies dataset
+# Function to load, save, and display movies dataset
 def load_movies():
     global movies_df
-    file_path = input("Enter path to movies dataset: ")
-    try:
-        movies_df = pd.read_csv(file_path, sep="|", header=None, names=["movie_genre", "movie_id", "movie_name"])
-        print("\nMovies dataset loaded successfully.")
-        print(movies_df.head(), "\n")
-    except FileNotFoundError:
-        print("❌ File not found. Try again.\n")
+    choice = input("Load from file (F) or enter new data (N)? ").strip().lower()
+    
+    # --- OPTION 1: Load from file ---
+    if choice == "f":
+        while True:
+            file_path = input("Enter path to movies dataset: ").strip()
+            # Automatically add .txt if missing
+            if not os.path.splitext(file_path)[1]:
+                file_path += ".txt"
 
+            # Only allow .txt files
+            if not file_path.lower().endswith(".txt"):
+                print("⚠️ Only .txt files are supported. Please try again.\n")
+                continue
+
+            # Try reading file
+            try:
+                movies_df = pd.read_csv(file_path, sep="|", header=None, names=["movie_genre", "movie_id", "movie_name"])
+                print("\n✅ Movies dataset loaded successfully.")
+                print(movies_df.head(), "\n")
+                break
+            except FileNotFoundError:
+                print("❌ File not found. Try again.\n")
+            except Exception as e:
+                print(f"⚠️ Error reading file: {e}\nPlease make sure it's a valid .txt file with '|' separators.\n")
+
+    # --- OPTION 2: Enter new data manually ---
+    elif choice == "n":
+        movies_df = pd.DataFrame(columns=["movie_genre", "movie_id", "movie_name"])
+        print("Enter movie data (type 'done' to finish):\n")
+        while True:
+            movie_name = input("Movie name (or 'done' to stop): ")
+            if movie_name.lower() == "done":
+                break
+            movie_genre = input("Genre: ")
+            movie_id = input("Movie ID: ")
+            movies_df.loc[len(movies_df)] = [movie_genre, movie_id, movie_name]
+
+        # Save file safely
+        while True:
+            file_path = input("Enter filename to save: ").strip()
+            if not os.path.splitext(file_path)[1]:
+                file_path += ".txt"
+
+            # Only allow .txt files
+            if not file_path.lower().endswith(".txt"):
+                print("⚠️ Only .txt files are supported. Please try again.\n")
+                continue
+
+            # Check if file already exists
+            if os.path.exists(file_path):
+                overwrite = input(f"⚠️ File '{file_path}' already exists. Overwrite? (Y/N): ").strip().lower()
+                if overwrite != "y":
+                    print("Please choose a different filename.")
+                    continue
+
+            # Save the file
+            movies_df.to_csv(file_path, sep="|", index=False, header=False)
+            print(f"\n✅ Movies data successfully saved to '{file_path}'.")
+            print(movies_df, "\n")
+            break
+
+    # --- INVALID OPTION ---
+    else:
+        print("Invalid choice. Please enter 'F' or 'N'.")
+
+
+# Function to load, save, and display ratings dataset
 def load_ratings():
     global rating_df
-    file_path = input("Enter path to ratings dataset: ")
-    try:
-        rating_df = pd.read_csv(file_path, sep="|", header=None, names=["movie_name", "rating", "user_id"])
-        print("\nRatings dataset loaded successfully.")
-        print(rating_df.head(), "\n")
-    except FileNotFoundError:
-        print("❌ File not found. Try again.\n")
+    choice = input("Load from file (F) or enter new data (N)? ").strip().lower()
+    
+    # --- OPTION 1: Load from file ---
+    if choice == "f":
+        while True:
+            file_path = input("Enter path to ratings dataset (without extension if .txt): ").strip()
+            # Automatically add .txt if missing
+            if not os.path.splitext(file_path)[1]:
+                file_path += ".txt"
+
+            # Only allow .txt files
+            if not file_path.lower().endswith(".txt"):
+                print("⚠️ Only .txt files are supported. Please try again.\n")
+                continue
+
+            # Try reading file
+            try:
+                rating_df = pd.read_csv(file_path, sep="|", header=None, names=["movie_name", "rating", "user_id"])
+                print("\n✅ Ratings dataset loaded successfully.")
+                print(rating_df.head(), "\n")
+                break
+            except FileNotFoundError:
+                print("❌ File not found. Try again.\n")
+            except Exception as e:
+                print(f"⚠️ Error reading file: {e}\nPlease make sure it's a valid .txt file with '|' separators.\n")
+
+    # --- OPTION 2: Enter new data manually ---
+    elif choice == "n":
+        rating_df = pd.DataFrame(columns=["movie_name", "rating", "user_id"])
+        print("Enter rating data (type 'done' to finish):\n")
+        while True:
+            movie_name = input("Movie name (or 'done' to stop): ")
+            if movie_name.lower() == "done":
+                break
+            rating = input("Rating (0–5): ")
+            user_id = input("User ID: ")
+            rating_df.loc[len(rating_df)] = [movie_name, rating, user_id]
+
+        # Save file safely
+        while True:
+            file_path = input("Enter filename to save (without extension if .txt): ").strip()
+            if not os.path.splitext(file_path)[1]:
+                file_path += ".txt"
+
+            # Only allow .txt files
+            if not file_path.lower().endswith(".txt"):
+                print("⚠️ Only .txt files are supported. Please try again.\n")
+                continue
+
+            # Check if file already exists
+            if os.path.exists(file_path):
+                overwrite = input(f"⚠️ File '{file_path}' already exists. Overwrite? (Y/N): ").strip().lower()
+                if overwrite != "y":
+                    print("Please choose a different filename.\n")
+                    continue
+
+            # Save the file
+            rating_df.to_csv(file_path, sep="|", index=False, header=False)
+            print(f"\n✅ Ratings data successfully saved to '{file_path}'.")
+            print(rating_df, "\n")
+            break
+
+    # --- INVALID OPTION ---
+    else:
+        print("Invalid choice. Please enter 'F' or 'N'.")
+
 
 # Function to show top N movies overall
 def top_n_movies():
