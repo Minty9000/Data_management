@@ -91,9 +91,9 @@ def top_n_movies():
 
 # Function to show top N movies by genre
 def top_n_movies_genre():
-    genre = input("Enter genre: ")
+    genre = input("Enter genre: ").strip().lower()
     n = int(input("Enter N: "))
-    genre_movies = movies_df[movies_df["movie_genre"] == genre]
+    genre_movies = movies_df[movies_df["movie_genre"].str.lower() == genre]
     merged = rating_df.merge(genre_movies, on="movie_name")
     avg_ratings = merged.groupby("movie_name")["rating"].mean().sort_values(ascending=False).head(n)
     print(f"\nTop {n} {genre} Movies:")
