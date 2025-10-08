@@ -141,21 +141,29 @@ def load_ratings():
     if choice == "f":
         while True:
             file_path = input("Enter path to ratings dataset: ").strip()
-            # Automatically add .txt if missing
             if not os.path.splitext(file_path)[1]:
                 file_path += ".txt"
 
-            # Only allow .txt files
             if not file_path.lower().endswith(".txt"):
                 print("⚠️ Only .txt files are supported. Please try again.\n")
                 continue
 
-            # Try reading file
             try:
                 rating_df = pd.read_csv(file_path, sep="|", header=None, names=["movie_name", "rating", "user_id"])
+                
+                # 🧠 Convert rating to numeric
+                rating_df["rating"] = pd.to_numeric(rating_df["rating"], errors="coerce")
+
+                # 🧠 Drop invalid or missing ratings
+                rating_df.dropna(subset=["rating"], inplace=True)
+
+                # 🧠 Ensure valid numeric range (optional but good)
+                rating_df = rating_df[(rating_df["rating"] >= 0) & (rating_df["rating"] <= 5)]
+
                 print("\n✅ Ratings dataset loaded successfully.")
                 print(rating_df.head(), "\n")
                 break
+
             except FileNotFoundError:
                 print("❌ File not found. Try again.\n")
             except Exception as e:
@@ -165,6 +173,7 @@ def load_ratings():
     elif choice == "n":
         rating_df = pd.DataFrame(columns=["movie_name", "rating", "user_id"])
         print("Enter rating data (type 'done' to finish):\n")
+
         while True:
             movie_name = input("Movie name (or 'done' to stop): ")
             if movie_name.lower() == "done":
@@ -173,25 +182,26 @@ def load_ratings():
             user_id = input("User ID: ")
             rating_df.loc[len(rating_df)] = [movie_name, rating, user_id]
 
-        # Save file safely
+        # 🧠 Convert and clean ratings here too
+        rating_df["rating"] = pd.to_numeric(rating_df["rating"], errors="coerce")
+        rating_df.dropna(subset=["rating"], inplace=True)
+        rating_df = rating_df[(rating_df["rating"] >= 0) & (rating_df["rating"] <= 5)]
+
         while True:
             file_path = input("Enter filename to save: ").strip()
             if not os.path.splitext(file_path)[1]:
                 file_path += ".txt"
 
-            # Only allow .txt files
             if not file_path.lower().endswith(".txt"):
                 print("⚠️ Only .txt files are supported. Please try again.\n")
                 continue
 
-            # Check if file already exists
             if os.path.exists(file_path):
                 overwrite = input(f"⚠️ File '{file_path}' already exists. Overwrite? (Y/N): ").strip().lower()
                 if overwrite != "y":
                     print("Please choose a different filename.\n")
                     continue
 
-            # Save the file
             rating_df.to_csv(file_path, sep="|", index=False, header=False)
             print(f"\n✅ Ratings data successfully saved to '{file_path}'.")
             print(rating_df, "\n")
@@ -204,10 +214,15 @@ def load_ratings():
 
 # Function to show top N movies overall
 def top_n_movies():
+    global rating_df
+
+    if rating_df is None:
+        print("Error: Please load the ratings dataset first (option 2).")
+        return
+
     n = int(input("Enter N: "))
     avg_ratings = rating_df.groupby("movie_name")["rating"].mean().sort_values(ascending=False).head(n)
-    print(f"\nTop {n} Movies (Overall):")
-    print(avg_ratings, "\n")
+    print(avg_ratings)
 
 # Function to show top N movies by genre
 def top_n_movies_genre():
