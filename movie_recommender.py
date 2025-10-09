@@ -84,6 +84,7 @@ def load_movies():
             try:
                 movies_df = pd.read_csv(file_path, sep="|", header=None, names=["movie_genre", "movie_id", "movie_name"])
                 print("\n✅ Movies dataset loaded successfully.")
+                print(movies_df.info())
                 print(movies_df.head(), "\n")
                 break
             except FileNotFoundError:
@@ -226,9 +227,19 @@ def top_n_movies():
 
 # Function to show top N movies by genre
 def top_n_movies_genre():
+
+    if movies_df is None or rating_df is None:
+        print("Error: Please load both movies and ratings datasets first.")
+        return
+    
     genre = input("Enter genre: ").strip().lower()
     n = int(input("Enter N: "))
     genre_movies = movies_df[movies_df["movie_genre"].str.lower() == genre]
+
+    if genre_movies.empty:
+        print(f"No movies found for genre '{genre}'.\n")
+        return
+    
     merged = rating_df.merge(genre_movies, on="movie_name")
     avg_ratings = merged.groupby("movie_name")["rating"].mean().sort_values(ascending=False).head(n)
     print(f"\nTop {n} {genre} Movies:")
@@ -236,6 +247,11 @@ def top_n_movies_genre():
 
 # Function to show top N genres
 def top_n_genre():
+
+    if movies_df is None or rating_df is None:
+        print("Error: Please load both movies and ratings datasets first.")
+        return
+    
     n = int(input("Enter N: "))
     merged = rating_df.merge(movies_df, on="movie_name")
     avg_ratings = merged.groupby("movie_genre")["rating"].mean().sort_values(ascending=False).head(n)
@@ -244,19 +260,31 @@ def top_n_genre():
 
 # Function to show the user's most preferred genre
 def preferred_genre():
-    user_id = input("Enter your user ID: ")
+
+    if movies_df is None or rating_df is None:
+        print("Error: Please load both movies and ratings datasets first.")
+        return
+    
+    user_id = input("Enter your user ID: ").strip() 
     user_ratings = rating_df[rating_df["user_id"] == int(user_id)]
     merged = user_ratings.merge(movies_df, on="movie_name")
     avg_ratings = merged.groupby("movie_genre")["rating"].mean().sort_values(ascending=False)
+
     if avg_ratings.empty:
         print("No ratings found for this user.\n")
         return None
+    
     fav_genre = avg_ratings.index[0]
     print(f"\nYour most preferred genre is: {fav_genre}\n")
     return fav_genre
 
 # Function to show top 3 movies from the user's favorite genre
 def top_3_movies_fav_genre():
+
+    if movies_df is None or rating_df is None:
+        print("Error: Please load both movies and ratings datasets first.")
+        return
+    
     user_id = input("Enter your user ID: ")
     fav_genre = preferred_genre()  # calls previous function
     if fav_genre:
