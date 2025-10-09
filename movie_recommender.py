@@ -222,7 +222,12 @@ def top_n_movies():
 
     n = int(input("Enter N: "))
     avg_ratings = rating_df.groupby("movie_name")["rating"].mean().sort_values(ascending=False).head(n)
-    print(avg_ratings)
+
+    avg_ratings_df = avg_ratings.reset_index()
+    avg_ratings_df.columns = ["Movie Name", "Average Rating"]
+
+    print(f"\nTop {n} Movies:")
+    print(avg_ratings_df.to_string(index=False, justify="left", formatters={"Average Rating": "{:.2f}".format}), "\n")
 
 # Function to show top N movies by genre
 def top_n_movies_genre():
@@ -241,8 +246,12 @@ def top_n_movies_genre():
     
     merged = rating_df.merge(genre_movies, on="movie_name")
     avg_ratings = merged.groupby("movie_name")["rating"].mean().sort_values(ascending=False).head(n)
+
+    avg_ratings_df = avg_ratings.reset_index()
+    avg_ratings_df.columns = ["Movie Name", "Average Rating"]
+    
     print(f"\nTop {n} {genre} Movies:")
-    print(avg_ratings, "\n")
+    print(avg_ratings_df.to_string(index=False, formatters={"Average Rating": "{:.2f}".format}), "\n")
 
 # Function to show top N genres
 def top_n_genre():
@@ -254,8 +263,12 @@ def top_n_genre():
     n = int(input("Enter N: "))
     merged = rating_df.merge(movies_df, on="movie_name")
     avg_ratings = merged.groupby("movie_genre")["rating"].mean().sort_values(ascending=False).head(n)
+
+    avg_ratings_df = avg_ratings.reset_index()
+    avg_ratings_df.columns = ["Movie Genre", "Average Rating"]
+    
     print(f"\nTop {n} Genres:")
-    print(avg_ratings, "\n")
+    print(avg_ratings_df.to_string(index=False, justify="left", formatters={"Average Rating": "{:.2f}".format}), "\n")
 
 # Function to show the user's most preferred genre
 def preferred_genre(user_id=None):
@@ -291,8 +304,13 @@ def top_3_movies_fav_genre():
         genre_movies = movies_df[movies_df["movie_genre"] == fav_genre]
         merged = rating_df.merge(genre_movies, on="movie_name")
         avg_ratings = merged.groupby("movie_name")["rating"].mean().sort_values(ascending=False).head(3)
+
+        # ✅ Convert Series → DataFrame for clean display
+        avg_ratings_df = avg_ratings.reset_index()
+        avg_ratings_df.columns = ["Movie Name", "Average Rating"]
+
         print(f"\nTop 3 {fav_genre} Movies for User {user_id}:")
-        print(avg_ratings, "\n")
+        print(avg_ratings_df.to_string(index=False, justify="left", formatters={"Average Rating": "{:.2f}".format}), "\n")
 
 
 
