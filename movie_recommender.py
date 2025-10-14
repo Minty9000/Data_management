@@ -264,6 +264,7 @@ def top_n_movies():
     print(f"\nTop {n} Movies:")
     print(avg_ratings_df.to_string(index=False, justify="left", formatters={"Average Rating": "{:.2f}".format}), "\n")
 
+
 # Function to show top N movies by genre
 def top_n_movies_genre():
     """
@@ -298,6 +299,7 @@ def top_n_movies_genre():
     print(f"\nTop {n} {genre} Movies:")
     print(avg_ratings_df.to_string(index=False, formatters={"Average Rating": "{:.2f}".format}), "\n")
 
+
 # Function to show top N genres
 def top_n_genre():
     """
@@ -323,6 +325,7 @@ def top_n_genre():
     
     print(f"\nTop {n} Genres:")
     print(avg_ratings_df.to_string(index=False, justify="left", formatters={"Average Rating": "{:.2f}".format}), "\n")
+
 
 # Function to show the user's most preferred genre
 def preferred_genre(user_id=None):
@@ -362,7 +365,8 @@ def preferred_genre(user_id=None):
     top_genres = avg_ratings[avg_ratings == top_score].index.tolist()
     print(f"\nYour most preferred genre(s): {', '.join(top_genres)}\n")
 
-    return top_genres[0] if len(top_genres) == 1 else top_genres
+    return top_genres
+
 
 # Function to show top 3 movies from the user's favorite genre
 def top_3_movies_fav_genre():
@@ -382,15 +386,18 @@ def top_3_movies_fav_genre():
         print("Invalid user ID. Must be a number.")
         return
     fav_genre = preferred_genre(user_id)  # calls previous function
-    if fav_genre:
-        genre_movies = movies_df[movies_df["movie_genre"] == fav_genre]
+    if not fav_genre:
+        return
+    
+    for genre in fav_genre:
+        genre_movies = movies_df[movies_df["movie_genre"] == genre]
         merged = rating_df.merge(genre_movies, on="movie_name", how="inner")
 
         # ✅ Only include movies that this user actually rated
         merged = merged[merged["user_id"] == user_id]
 
         if merged.empty:
-            print(f"No {fav_genre} movies rated by user {user_id}.")
+            print(f"No {genre} movies rated by user {user_id}.")
             return
         avg_ratings = (
             merged.groupby("movie_name")["rating"]
@@ -401,7 +408,7 @@ def top_3_movies_fav_genre():
 
         avg_ratings_df = avg_ratings.reset_index()
         avg_ratings_df.columns = ["Movie Name", "Average Rating"]
-        print(f"\nTop 3 {fav_genre} Movies for User {user_id}:")
+        print(f"\nTop 3 {genre} Movies for User {user_id}:")
         print(
             avg_ratings_df.to_string(
                 index=False,
