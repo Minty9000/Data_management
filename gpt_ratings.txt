@@ -66,6 +66,5 @@ The Sixth Sense (1999)|4.5|6
 Candyman (1992)|3.0|1
 Candyman (1992)|2.5|2
 Candyman (1992)|3.5|8
-MovieDoesNotExist (2099)|3.0|9             
-Jumanji (1995)|4.0|8                                    
-Heat (1995)|abc|3                         
+MovieDoesNotExist (2099)|3.0|9
+Jumanji (1995)|4.0|8

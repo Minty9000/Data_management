@@ -220,7 +220,11 @@ def top_n_movies():
         print("Error: Please load the ratings dataset first (option 2).")
         return
 
-    n = int(input("Enter N: "))
+    try:
+        n = int(input("Enter N: ").strip())
+    except ValueError:
+        print("Invalid number. Please enter a numeric value.")
+        return
     avg_ratings = rating_df.groupby("movie_name")["rating"].mean().sort_values(ascending=False).head(n)
 
     avg_ratings_df = avg_ratings.reset_index()
@@ -237,14 +241,20 @@ def top_n_movies_genre():
         return
     
     genre = input("Enter genre: ").strip().lower()
-    n = int(input("Enter N: "))
+
+    try:
+        n = int(input("Enter N: ").strip())
+    except ValueError:
+        print("Invalid number. Please enter a numeric value.")
+        return
+    
     genre_movies = movies_df[movies_df["movie_genre"].str.lower() == genre]
 
     if genre_movies.empty:
         print(f"No movies found for genre '{genre}'.\n")
         return
     
-    merged = rating_df.merge(genre_movies, on="movie_name")
+    merged = rating_df.merge(genre_movies, on="movie_name", how="right")
     avg_ratings = merged.groupby("movie_name")["rating"].mean().sort_values(ascending=False).head(n)
 
     avg_ratings_df = avg_ratings.reset_index()
@@ -260,7 +270,12 @@ def top_n_genre():
         print("Error: Please load both movies and ratings datasets first.")
         return
     
-    n = int(input("Enter N: "))
+    try:
+        n = int(input("Enter N: ").strip())
+    except ValueError:
+        print("Invalid number. Please enter a numeric value.")
+        return
+    
     merged = rating_df.merge(movies_df, on="movie_name")
     avg_ratings = merged.groupby("movie_genre")["rating"].mean().sort_values(ascending=False).head(n)
 
@@ -279,13 +294,11 @@ def preferred_genre(user_id=None):
         return
 
     if user_id is None:
-        user_id = input("Enter your user ID: ").strip()
-
-    try:
-        user_id = int(user_id)
-    except ValueError:
-        print("Invalid user ID. Please enter a numeric value.\n")
-        return
+        try:
+            user_id = int(input("Enter your user ID: ").strip())
+        except ValueError:
+            print("Invalid user ID. Please enter a numeric value.\n")
+            return
 
     user_ratings = rating_df[rating_df["user_id"] == user_id]
     merged = user_ratings.merge(movies_df, on="movie_name", how="inner")
@@ -295,10 +308,6 @@ def preferred_genre(user_id=None):
         return None
 
     avg_ratings = merged.groupby("movie_genre")["rating"].mean().sort_values(ascending=False)
-
-    if avg_ratings.empty:
-        print("No ratings found for this user.\n")
-        return None
 
     top_score = avg_ratings.iloc[0]
     top_genres = avg_ratings[avg_ratings == top_score].index.tolist()
@@ -334,6 +343,7 @@ def top_3_movies_fav_genre():
             .sort_values(ascending=False)
             .head(3)
         )
+
         avg_ratings_df = avg_ratings.reset_index()
         avg_ratings_df.columns = ["Movie Name", "Average Rating"]
         print(f"\nTop 3 {fav_genre} Movies for User {user_id}:")
