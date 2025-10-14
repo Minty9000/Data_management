@@ -22,4 +22,4 @@ Candyman (1992)|2.5|2
 MovieDoesNotExist (2099)|3.0|9             
 Jumanji (1995)|                           
 |4.0|8                                    
-Heat (1995)|abc|3                         
+Heat (1995)|abc|3

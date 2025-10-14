@@ -272,47 +272,87 @@ def top_n_genre():
 
 # Function to show the user's most preferred genre
 def preferred_genre(user_id=None):
+    global movies_df, rating_df  # ensure access to global data
 
     if movies_df is None or rating_df is None:
         print("Error: Please load both movies and ratings datasets first.")
         return
-    
+
     if user_id is None:
         user_id = input("Enter your user ID: ").strip()
-    user_ratings = rating_df[rating_df["user_id"] == int(user_id)]
-    merged = user_ratings.merge(movies_df, on="movie_name")
+
+    try:
+        user_id = int(user_id)
+    except ValueError:
+        print("Invalid user ID. Please enter a numeric value.\n")
+        return
+
+    user_ratings = rating_df[rating_df["user_id"] == user_id]
+    merged = user_ratings.merge(movies_df, on="movie_name", how="inner")
+
+    if merged.empty:
+        print("No ratings found for this user.\n")
+        return None
+
     avg_ratings = merged.groupby("movie_genre")["rating"].mean().sort_values(ascending=False)
 
     if avg_ratings.empty:
         print("No ratings found for this user.\n")
         return None
-    
-    fav_genre = avg_ratings.index[0]
-    print(f"\nYour most preferred genre is: {fav_genre}\n")
-    return fav_genre
+
+    top_score = avg_ratings.iloc[0]
+    top_genres = avg_ratings[avg_ratings == top_score].index.tolist()
+    print(f"\nYour most preferred genre(s): {', '.join(top_genres)}\n")
+
+    return top_genres[0] if len(top_genres) == 1 else top_genres
 
 # Function to show top 3 movies from the user's favorite genre
 def top_3_movies_fav_genre():
-
     if movies_df is None or rating_df is None:
         print("Error: Please load both movies and ratings datasets first.")
         return
     
-    user_id = input("Enter your user ID: ").strip()
+    # 🔢 Keep user_id numeric
+    try:
+        user_id = int(input("Enter your user ID: ").strip())
+    except ValueError:
+        print("Invalid user ID. Must be a number.")
+        return
+
     fav_genre = preferred_genre(user_id)  # calls previous function
+
     if fav_genre:
         genre_movies = movies_df[movies_df["movie_genre"] == fav_genre]
-        merged = rating_df.merge(genre_movies, on="movie_name")
-        avg_ratings = merged.groupby("movie_name")["rating"].mean().sort_values(ascending=False).head(3)
+        merged = rating_df.merge(genre_movies, on="movie_name", how="inner")
+
+        # ✅ Only include movies that this user actually rated
+        merged = merged[merged["user_id"] == user_id]
+
+        if merged.empty:
+            print(f"No {fav_genre} movies rated by user {user_id}.")
+            return
+
+        # ✅ Compute average ratings for the user's rated movies
+        avg_ratings = (
+            merged.groupby("movie_name")["rating"]
+            .mean()
+            .sort_values(ascending=False)
+            .head(3)
+        )
 
         # ✅ Convert Series → DataFrame for clean display
         avg_ratings_df = avg_ratings.reset_index()
         avg_ratings_df.columns = ["Movie Name", "Average Rating"]
 
         print(f"\nTop 3 {fav_genre} Movies for User {user_id}:")
-        print(avg_ratings_df.to_string(index=False, justify="left", formatters={"Average Rating": "{:.2f}".format}), "\n")
-
-
+        print(
+            avg_ratings_df.to_string(
+                index=False,
+                justify="left",
+                formatters={"Average Rating": "{:.2f}".format},
+            ),
+            "\n",
+        )
 
 # Run the menu
 main_menu()
