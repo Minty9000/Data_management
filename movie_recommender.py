@@ -21,6 +21,12 @@ Select an option:
 
 # Function to display the menu and handle user input
 def main_menu():
+    """
+    Displays the main menu and handles user interaction.
+    
+    Continuously prompts the user to select an option from the menu.
+    Each option calls a corresponding function until the user chooses to exit.
+    """
     while True:
         print(menu_options)
 
@@ -64,6 +70,15 @@ def main_menu():
 
 # Function to load, save, and display movies dataset
 def load_movies():
+    """
+    Loads or creates a movies dataset.
+
+    Options:
+        - Load from a .txt file (pipe-separated)
+        - Enter new data manually and save to a file
+
+    The dataset contains columns: ['movie_genre', 'movie_id', 'movie_name'].
+    """
     global movies_df
     choice = input("Load from file (F) or enter new data (N)? ").strip().lower()
     
@@ -134,6 +149,16 @@ def load_movies():
 
 # Function to load, save, and display ratings dataset
 def load_ratings():
+    """
+    Loads or creates a ratings dataset.
+
+    Options:
+        - Load from a .txt file (pipe-separated)
+        - Enter new data manually and save to a file
+
+    The dataset contains columns: ['movie_name', 'rating', 'user_id'].
+    Ratings are validated to be numeric and between 0 and 5.
+    """
     global rating_df
     choice = input("Load from file (F) or enter new data (N)? ").strip().lower()
     
@@ -214,6 +239,12 @@ def load_ratings():
 
 # Function to show top N movies overall
 def top_n_movies():
+    """
+    Displays the top N movies with the highest average ratings.
+    
+    Prompts the user to enter N and prints the movies sorted by their
+    average rating in descending order.
+    """
     global rating_df
 
     if rating_df is None:
@@ -235,7 +266,11 @@ def top_n_movies():
 
 # Function to show top N movies by genre
 def top_n_movies_genre():
+    """
+    Displays the top N movies within a given genre based on average ratings.
 
+    Requires both the movies and ratings datasets to be loaded.
+    """
     if movies_df is None or rating_df is None:
         print("Error: Please load both movies and ratings datasets first.")
         return
@@ -265,7 +300,11 @@ def top_n_movies_genre():
 
 # Function to show top N genres
 def top_n_genre():
+    """
+    Displays the top N genres based on average movie ratings.
 
+    Requires both the movies and ratings datasets to be loaded.
+    """
     if movies_df is None or rating_df is None:
         print("Error: Please load both movies and ratings datasets first.")
         return
@@ -287,7 +326,17 @@ def top_n_genre():
 
 # Function to show the user's most preferred genre
 def preferred_genre(user_id=None):
-    global movies_df, rating_df  # ensure access to global data
+    """
+    Displays the user's most preferred genre based on their average ratings.
+
+    Args:
+        user_id (int, optional): User ID to calculate preferences for. 
+                                 If None, the user is prompted to enter one.
+
+    Returns:
+        str | list | None: The user's top genre(s), or None if no data is found.
+    """
+    global movies_df, rating_df
 
     if movies_df is None or rating_df is None:
         print("Error: Please load both movies and ratings datasets first.")
@@ -317,6 +366,12 @@ def preferred_genre(user_id=None):
 
 # Function to show top 3 movies from the user's favorite genre
 def top_3_movies_fav_genre():
+    """
+    Displays the top 3 movies from the user's most preferred genre.
+
+    Uses the user's ratings and preferred genre to identify their top-rated
+    movies within that genre.
+    """
     if movies_df is None or rating_df is None:
         print("Error: Please load both movies and ratings datasets first.")
         return
