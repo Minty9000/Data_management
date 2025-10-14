@@ -356,5 +356,7 @@ def top_3_movies_fav_genre():
             "\n",
         )
 
-# Run the menu
-main_menu()
+
+if __name__ == "__main__":
+    # Run the menu
+    main_menu()
