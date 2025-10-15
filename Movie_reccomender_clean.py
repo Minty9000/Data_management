@@ -1,22 +1,21 @@
 import pandas as pd
 import os
 
+# Read the data from the text file into a DataFrame
+movies_df = None
+rating_df = None
 
-# --- NEW INPUT CLEANING FUNCTION ---
+
+# --- CENTRALIZED INPUT CLEANING FUNCTION ---
 def clean_input(text):
     """
     Cleans user input by stripping leading/trailing whitespace.
-    It ensures consistency for string comparisons (e.g., ' F ' becomes 'F').
+    This ensures consistency for string comparisons and file paths.
     """
     return str(text).strip()
 
 
-# -----------------------------------
-
-
-# Read the data from the text file into a DataFrame
-movies_df = None
-rating_df = None
+# -----------------------------------------------
 
 # Define the menu options
 menu_options = """\n
@@ -36,16 +35,12 @@ Select an option:
 def main_menu():
     """
     Displays the main menu and handles user interaction.
-
-    Continuously prompts the user to select an option from the menu.
-    Each option calls a corresponding function until the user chooses to exit.
     """
     while True:
         print(menu_options)
 
-        # NOTE: choice is kept as raw input because it's validated numerically (1-8)
-        # and doesn't need string cleaning beyond the existing validation logic.
-        choice = input("Enter your choice (1-8): ")
+        # 🧹 CLEANED: Using clean_input to handle accidental spaces (e.g., '1 ')
+        choice = clean_input(input("Enter your choice (1-8): "))
 
         if choice == "1":
             print("Loading movies dataset...")
@@ -87,22 +82,17 @@ def main_menu():
 def load_movies():
     """
     Loads or creates a movies dataset.
-
-    Options:
-        - Load from a .txt file (pipe-separated)
-        - Enter new data manually and save to a file
-
-    The dataset contains columns: ['movie_genre', 'movie_id', 'movie_name'].
     """
     global movies_df
-    # 🧹 CLEANED INPUT
+    # 🧹 CLEANED: Using clean_input and then .lower()
     choice = clean_input(input("Load from file (F) or enter new data (N)? ")).lower()
 
     # --- OPTION 1: Load from file ---
     if choice == "f":
         while True:
-            # 🧹 CLEANED INPUT
+            # 🧹 CLEANED: Using clean_input
             file_path = clean_input(input("Enter path to movies dataset: "))
+
             # Automatically add .txt if missing
             if not os.path.splitext(file_path)[1]:
                 file_path += ".txt"
@@ -129,8 +119,6 @@ def load_movies():
         movies_df = pd.DataFrame(columns=["movie_genre", "movie_id", "movie_name"])
         print("Enter movie data (type 'done' to finish):\n")
         while True:
-            # We don't clean these inputs yet, as they are going into the DataFrame as raw data.
-            # You might want to clean them later, but the primary security/parsing risk is on file paths/options.
             movie_name = input("Movie name (or 'done' to stop): ")
             if movie_name.lower() == "done":
                 break
@@ -140,6 +128,7 @@ def load_movies():
 
         # Save file safely
         while True:
+            # 🧹 CLEANED: Using clean_input
             file_path = clean_input(input("Enter filename to save: "))
             if not os.path.splitext(file_path)[1]:
                 file_path += ".txt"
@@ -151,7 +140,8 @@ def load_movies():
 
             # Check if file already exists
             if os.path.exists(file_path):
-                overwrite = input(f"⚠️ File '{file_path}' already exists. Overwrite? (Y/N): ").strip().lower()
+                # 🧹 CLEANED: Using clean_input for overwrite prompt
+                overwrite = clean_input(input(f"⚠️ File '{file_path}' already exists. Overwrite? (Y/N): ")).lower()
                 if overwrite != "y":
                     print("Please choose a different filename.")
                     continue
@@ -171,22 +161,15 @@ def load_movies():
 def load_ratings():
     """
     Loads or creates a ratings dataset.
-
-    Options:
-        - Load from a .txt file (pipe-separated)
-        - Enter new data manually and save to a file
-
-    The dataset contains columns: ['movie_name', 'rating', 'user_id'].
-    Ratings are validated to be numeric and between 0 and 5.
     """
     global rating_df
-    # 🧹 CLEANED INPUT
+    # 🧹 CLEANED: Using clean_input and then .lower()
     choice = clean_input(input("Load from file (F) or enter new data (N)? ")).lower()
 
     # --- OPTION 1: Load from file ---
     if choice == "f":
         while True:
-            # 🧹 CLEANED INPUT
+            # 🧹 CLEANED: Using clean_input
             file_path = clean_input(input("Enter path to ratings dataset: "))
             if not os.path.splitext(file_path)[1]:
                 file_path += ".txt"
@@ -198,13 +181,9 @@ def load_ratings():
             try:
                 rating_df = pd.read_csv(file_path, sep="|", header=None, names=["movie_name", "rating", "user_id"])
 
-                # 🧠 Convert rating to numeric
+                # Data Cleaning for ratings
                 rating_df["rating"] = pd.to_numeric(rating_df["rating"], errors="coerce")
-
-                # 🧠 Drop invalid or missing ratings
                 rating_df.dropna(subset=["rating"], inplace=True)
-
-                # 🧠 Ensure valid numeric range (optional but good)
                 rating_df = rating_df[(rating_df["rating"] >= 0) & (rating_df["rating"] <= 5)]
 
                 print("\n✅ Ratings dataset loaded successfully.")
@@ -229,12 +208,13 @@ def load_ratings():
             user_id = input("User ID: ")
             rating_df.loc[len(rating_df)] = [movie_name, rating, user_id]
 
-        # 🧠 Convert and clean ratings here too
+        # Data Cleaning for ratings
         rating_df["rating"] = pd.to_numeric(rating_df["rating"], errors="coerce")
         rating_df.dropna(subset=["rating"], inplace=True)
         rating_df = rating_df[(rating_df["rating"] >= 0) & (rating_df["rating"] <= 5)]
 
         while True:
+            # 🧹 CLEANED: Using clean_input
             file_path = clean_input(input("Enter filename to save: "))
             if not os.path.splitext(file_path)[1]:
                 file_path += ".txt"
@@ -244,7 +224,8 @@ def load_ratings():
                 continue
 
             if os.path.exists(file_path):
-                overwrite = input(f"⚠️ File '{file_path}' already exists. Overwrite? (Y/N): ").strip().lower()
+                # 🧹 CLEANED: Using clean_input for overwrite prompt
+                overwrite = clean_input(input(f"⚠️ File '{file_path}' already exists. Overwrite? (Y/N): ")).lower()
                 if overwrite != "y":
                     print("Please choose a different filename.\n")
                     continue
@@ -263,9 +244,6 @@ def load_ratings():
 def top_n_movies():
     """
     Displays the top N movies with the highest average ratings.
-
-    Prompts the user to enter N and prints the movies sorted by their
-    average rating in descending order.
     """
     global rating_df
 
@@ -274,13 +252,17 @@ def top_n_movies():
         return
 
     try:
-        # User input for N is numeric, so clean_input is not strictly necessary,
-        # but a simple .strip() is still good practice.
-        n = int(input("Enter N: ").strip())
+        # NOTE: No .strip() needed, but for full robustness,
+        # it would ideally use a numeric validation function.
+        n = int(input("Enter N: "))
     except ValueError:
         print("Invalid number. Please enter a numeric value.")
         return
+
     avg_ratings = rating_df.groupby("movie_name")["rating"].mean().sort_values(ascending=False).head(n)
+
+    # FIX: Drop NaN values (movies with no valid ratings)
+    avg_ratings = avg_ratings.dropna()
 
     avg_ratings_df = avg_ratings.reset_index()
     avg_ratings_df.columns = ["Movie Name", "Average Rating"]
@@ -293,18 +275,17 @@ def top_n_movies():
 def top_n_movies_genre():
     """
     Displays the top N movies within a given genre based on average ratings.
-
-    Requires both the movies and ratings datasets to be loaded.
     """
     if movies_df is None or rating_df is None:
         print("Error: Please load both movies and ratings datasets first.")
         return
 
-    # 🧹 CLEANED INPUT
+    # 🧹 CLEANED: Using clean_input and then .lower()
     genre = clean_input(input("Enter genre: ")).lower()
 
     try:
-        n = int(input("Enter N: ").strip())
+        # NOTE: No .strip() needed.
+        n = int(input("Enter N: "))
     except ValueError:
         print("Invalid number. Please enter a numeric value.")
         return
@@ -318,6 +299,9 @@ def top_n_movies_genre():
     merged = rating_df.merge(genre_movies, on="movie_name", how="right")
     avg_ratings = merged.groupby("movie_name")["rating"].mean().sort_values(ascending=False).head(n)
 
+    # FIX: Drop NaN values (movies with no valid ratings)
+    avg_ratings = avg_ratings.dropna()
+
     avg_ratings_df = avg_ratings.reset_index()
     avg_ratings_df.columns = ["Movie Name", "Average Rating"]
 
@@ -329,21 +313,23 @@ def top_n_movies_genre():
 def top_n_genre():
     """
     Displays the top N genres based on average movie ratings.
-
-    Requires both the movies and ratings datasets to be loaded.
     """
     if movies_df is None or rating_df is None:
         print("Error: Please load both movies and ratings datasets first.")
         return
 
     try:
-        n = int(input("Enter N: ").strip())
+        # NOTE: No .strip() needed.
+        n = int(input("Enter N: "))
     except ValueError:
         print("Invalid number. Please enter a numeric value.")
         return
 
     merged = rating_df.merge(movies_df, on="movie_name")
     avg_ratings = merged.groupby("movie_genre")["rating"].mean().sort_values(ascending=False).head(n)
+
+    # FIX: Drop NaN values (genres with no valid ratings)
+    avg_ratings = avg_ratings.dropna()
 
     avg_ratings_df = avg_ratings.reset_index()
     avg_ratings_df.columns = ["Movie Genre", "Average Rating"]
@@ -356,13 +342,6 @@ def top_n_genre():
 def preferred_genre(user_id=None):
     """
     Displays the user's most preferred genre based on their average ratings.
-
-    Args:
-        user_id (int, optional): User ID to calculate preferences for.
-                                    If None, the user is prompted to enter one.
-
-    Returns:
-        str | list | None: The user's top genre(s), or None if no data is found.
     """
     global movies_df, rating_df
 
@@ -372,8 +351,8 @@ def preferred_genre(user_id=None):
 
     if user_id is None:
         try:
-            # Input for user_id is numeric, so .strip() is sufficient here
-            user_id = int(input("Enter your user ID: ").strip())
+            # NOTE: No .strip() needed.
+            user_id = int(input("Enter your user ID: "))
         except ValueError:
             print("Invalid user ID. Please enter a numeric value.\n")
             return
@@ -387,6 +366,13 @@ def preferred_genre(user_id=None):
 
     avg_ratings = merged.groupby("movie_genre")["rating"].mean().sort_values(ascending=False)
 
+    # FIX: Drop NaN values (user has no valid ratings for a genre)
+    avg_ratings = avg_ratings.dropna()
+
+    if avg_ratings.empty:
+        print("No valid genre preferences found for this user.\n")
+        return None
+
     top_score = avg_ratings.iloc[0]
     top_genres = avg_ratings[avg_ratings == top_score].index.tolist()
     print(f"\nYour most preferred genre(s): {', '.join(top_genres)}\n")
@@ -398,20 +384,18 @@ def preferred_genre(user_id=None):
 def top_3_movies_fav_genre():
     """
     Displays the top 3 movies from the user's most preferred genre.
-
-    Uses the user's ratings and preferred genre to identify their top-rated
-    movies within that genre.
     """
     if movies_df is None or rating_df is None:
         print("Error: Please load both movies and ratings datasets first.")
         return
-    # 🔢 Keep user_id numeric for consistency
+
     try:
-        # Input for user_id is numeric, so .strip() is sufficient here
-        user_id = int(input("Enter your user ID: ").strip())
+        # NOTE: No .strip() needed.
+        user_id = int(input("Enter your user ID: "))
     except ValueError:
         print("Invalid user ID. Must be a number.")
         return
+
     fav_genre = preferred_genre(user_id)  # calls previous function
     if not fav_genre:
         return
@@ -420,18 +404,22 @@ def top_3_movies_fav_genre():
         genre_movies = movies_df[movies_df["movie_genre"] == genre]
         merged = rating_df.merge(genre_movies, on="movie_name", how="inner")
 
-        # ✅ Only include movies that this user actually rated
+        # Only include movies that this user actually rated
         merged = merged[merged["user_id"] == user_id]
 
         if merged.empty:
             print(f"No {genre} movies rated by user {user_id}.")
             return
+
         avg_ratings = (
             merged.groupby("movie_name")["rating"]
             .mean()
             .sort_values(ascending=False)
             .head(3)
         )
+
+        # FIX: Drop NaN values (movies in this genre user didn't rate validly)
+        avg_ratings = avg_ratings.dropna()
 
         avg_ratings_df = avg_ratings.reset_index()
         avg_ratings_df.columns = ["Movie Name", "Average Rating"]
