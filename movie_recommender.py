@@ -19,6 +19,41 @@ Select an option:
 """
 
 
+def is_column_numeric(df, col_name):
+    """
+    Checks if a column can be reasonably converted to a numeric type.
+    A column passes if less than 10% of its non-null values become NaN after coercion.
+    """
+    col = pd.to_numeric(df[col_name], errors='coerce')
+
+    original_non_null_count = df[col_name].dropna().shape[0]
+    if original_non_null_count == 0:
+        return False
+
+    nan_count_after_coercion = col.isna().sum()
+
+    # Validation passes if less than 10% of the original non-null values became NaN
+    return nan_count_after_coercion < (original_non_null_count * 0.1)
+
+
+def validate_dataframe(df, expected_columns, numeric_check_col=None):
+    """
+    Checks if the loaded DataFrame has the correct column names and
+    performs a mandatory numeric check on a specific column to differentiate files.
+
+    Returns: True if validation passes, False otherwise.
+    """
+    # 1. Check Column Names/Count
+    if df.columns.tolist() != expected_columns:
+        return False
+
+    # 2. Check Key Numeric Column (Crucial for file differentiation)
+    if numeric_check_col and not is_column_numeric(df, numeric_check_col):
+        return False
+
+    return True
+
+
 # Function to display the menu and handle user input
 def main_menu():
     """
@@ -30,7 +65,7 @@ def main_menu():
     while True:
         print(menu_options)
 
-        choice = input("Enter your choice (1-8): ")
+        choice = input("Enter your choice (1-8): ").strip()
 
         if choice == "1":
             print("Loading movies dataset...")
@@ -77,15 +112,28 @@ def load_movies():
         - Load from a .txt file (pipe-separated)
         - Enter new data manually and save to a file
 
-    The dataset contains columns: ['movie_genre', 'movie_id', 'movie_name'].
+    The dataset contains columns: ['movie_genre', 'movie_id', 'movie_name']
+
+    Validation requires 'movie_id' (Col 2) to be numeric AND
+    'movie_name' (Col 3, which would be User ID in ratings.txt) to NOT be cleanly convertible to integers.
     """
     global movies_df
     choice = input("Load from file (F) or enter new data (N)? ").strip().lower()
     
+    expected_movie_cols = ["movie_genre", "movie_id", "movie_name"]
+
     # --- OPTION 1: Load from file ---
     if choice == "f":
         while True:
-            file_path = input("Enter path to movies dataset: ").strip()
+            file_input = input("Enter path to movies dataset (or 'E' to exit): ").strip()
+
+            # ⬅️ EXIT CHECK
+            if file_input.lower() == 'e':
+                print("Returning to main menu.")
+                return
+
+            file_path = file_input
+
             # Automatically add .txt if missing
             if not os.path.splitext(file_path)[1]:
                 file_path += ".txt"
@@ -97,7 +145,30 @@ def load_movies():
 
             # Try reading file
             try:
-                movies_df = pd.read_csv(file_path, sep="|", header=None, names=["movie_genre", "movie_id", "movie_name"])
+                temp_df = pd.read_csv(file_path, sep="|", header=None, names=expected_movie_cols)
+
+                # --- VALIDATION STEP 1: Check column count and 'movie_id' (Col 2) for numeric content ---
+                if not validate_dataframe(temp_df, expected_movie_cols, numeric_check_col="movie_id"):
+                    print(
+                        f"❌ File structure mismatch! Column count or 'movie_id' data type is incorrect. Please check your file.")
+                    continue
+
+                    # --- VALIDATION STEP 2: CRITICAL CHECK to block ratings.txt ---
+                try:
+                    pd.to_numeric(temp_df["movie_name"], errors='raise').astype(int)
+                    is_mostly_integer = True
+                except (ValueError, TypeError):
+                    is_mostly_integer = False
+
+                if is_mostly_integer:
+                    print(
+                        "❌ Validation Failed! The third column's data type suggests this is the RATINGS file (User IDs). You need to upload the .txt with the movies in to this one.")
+                    continue
+
+                # Final cleaning and assignment
+                temp_df["movie_id"] = pd.to_numeric(temp_df["movie_id"], errors='coerce')
+                movies_df = temp_df.dropna(subset=['movie_id'])
+                
                 print("\n✅ Movies dataset loaded successfully.")
                 print(movies_df.head(), "\n")
                 break
@@ -111,11 +182,11 @@ def load_movies():
         movies_df = pd.DataFrame(columns=["movie_genre", "movie_id", "movie_name"])
         print("Enter movie data (type 'done' to finish):\n")
         while True:
-            movie_name = input("Movie name (or 'done' to stop): ")
+            movie_name = input("Movie name (or 'done' to stop): ").strip()
             if movie_name.lower() == "done":
                 break
-            movie_genre = input("Genre: ")
-            movie_id = input("Movie ID: ")
+            movie_genre = input("Genre: ").strip()
+            movie_id = int(input("Movie ID: ").strip())
             movies_df.loc[len(movies_df)] = [movie_genre, movie_id, movie_name]
 
         # Save file safely
@@ -157,15 +228,27 @@ def load_ratings():
         - Enter new data manually and save to a file
 
     The dataset contains columns: ['movie_name', 'rating', 'user_id'].
-    Ratings are validated to be numeric and between 0 and 5.
+
+    Validation requires 'rating' (Col 2) to be numeric AND
+    'user_id' (Col 3, which would be Movie Name in movies.txt) to be cleanly convertible to integers.
     """
     global rating_df
     choice = input("Load from file (F) or enter new data (N)? ").strip().lower()
     
+    expected_rating_cols = ["movie_name", "rating", "user_id"]
+
     # --- OPTION 1: Load from file ---
     if choice == "f":
         while True:
-            file_path = input("Enter path to ratings dataset: ").strip()
+            file_input = input("Enter path to ratings dataset (or 'E' to exit): ").strip()
+
+            # ⬅️ EXIT CHECK
+            if file_input.lower() == 'e':
+                print("Returning to main menu.")
+                return
+
+            file_path = file_input
+
             if not os.path.splitext(file_path)[1]:
                 file_path += ".txt"
 
@@ -174,16 +257,33 @@ def load_ratings():
                 continue
 
             try:
-                rating_df = pd.read_csv(file_path, sep="|", header=None, names=["movie_name", "rating", "user_id"])
-                
-                # 🧠 Convert rating to numeric
-                rating_df["rating"] = pd.to_numeric(rating_df["rating"], errors="coerce")
+                temp_df = pd.read_csv(file_path, sep="|", header=None, names=expected_rating_cols)
 
-                # 🧠 Drop invalid or missing ratings
-                rating_df.dropna(subset=["rating"], inplace=True)
+                # --- VALIDATION STEP 1: Check column count and 'rating' (Col 2) for numeric content ---
+                if not validate_dataframe(temp_df, expected_rating_cols, numeric_check_col="rating"):
+                    print(
+                        f"❌ File structure mismatch! The file columns ({expected_rating_cols}) or the 'rating' column data type is incorrect. Please ensure you are loading a ratings file.")
+                    continue
 
-                # 🧠 Ensure valid numeric range (optional but good)
-                rating_df = rating_df[(rating_df["rating"] >= 0) & (rating_df["rating"] <= 5)]
+                # --- VALIDATION STEP 2: CRITICAL CHECK to block movies.txt ---
+                try:
+                    pd.to_numeric(temp_df["user_id"], errors='raise').astype(int)
+                    is_mostly_integer = True
+                except (ValueError, TypeError):
+                    is_mostly_integer = False
+
+                # If the third column is NOT mostly integers, it's the wrong file.
+                if not is_mostly_integer:
+                    print(
+                        "❌ Validation Failed! The third column's data type suggests this is the MOVIES file (Movie Names). You need to upload the .txt with the ratings in to this one.")
+                    continue
+
+                # Clean and filter the data AFTER validation passes
+                temp_df["rating"] = pd.to_numeric(temp_df["rating"], errors="coerce")
+                temp_df.dropna(subset=["rating"], inplace=True)
+                temp_df = temp_df[(temp_df["rating"] >= 0) & (temp_df["rating"] <= 5)]
+
+                rating_df = temp_df
 
                 print("\n✅ Ratings dataset loaded successfully.")
                 print(rating_df.head(), "\n")
@@ -203,8 +303,8 @@ def load_ratings():
             movie_name = input("Movie name (or 'done' to stop): ")
             if movie_name.lower() == "done":
                 break
-            rating = input("Rating (0–5): ")
-            user_id = input("User ID: ")
+            rating = float(input("Rating (0-5): ").strip())
+            user_id = int(input("User ID: ").strip())
             rating_df.loc[len(rating_df)] = [movie_name, rating, user_id]
 
         # 🧠 Convert and clean ratings here too

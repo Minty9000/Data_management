@@ -269,7 +269,7 @@ def load_ratings():
             movie_name = input("Movie name (or 'done' to stop): ")
             if movie_name.lower() == "done":
                 break
-            rating = input("Rating (0–5): ")
+            rating = input("Rating (0-5): ")
             user_id = input("User ID: ")
             rating_df.loc[len(rating_df)] = [movie_name, rating, user_id]
 
